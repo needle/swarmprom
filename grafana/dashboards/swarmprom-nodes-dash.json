@@ -16,7 +16,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1547535746076,
+  "iteration": 1662741247711,
   "links": [],
   "panels": [
     {
@@ -1227,7 +1227,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": null,
-      "fill": 1,
+      "fill": 0,
       "gridPos": {
         "h": 7,
         "w": 24,
@@ -1243,6 +1243,8 @@
         "min": true,
         "rightSide": true,
         "show": true,
+        "sort": "min",
+        "sortDesc": true,
         "total": false,
         "values": true
       },
@@ -1256,11 +1258,11 @@
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum((node_memory_SwapTotal_bytes - node_memory_SwapFree_bytes) * on(instance) group_left(node_name) node_meta{node_id=~\"$node_id\"}) by (node_name)",
+          "expr": "sum(((node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100) * on(instance) group_left(node_name) node_meta{node_id=~\"$node_id\"}) by (node_name)",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "Used {{node_name}}",
@@ -1271,7 +1273,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Swap memory usage by Node",
+      "title": "Memory Used %",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1287,7 +1289,7 @@
       },
       "yaxes": [
         {
-          "format": "decbytes",
+          "format": "percent",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -1885,7 +1887,7 @@
           "alias": "Time",
           "dateFormat": "YYYY-MM-DD HH:mm:ss",
           "pattern": "Time",
-          "type": "hidden"
+          "type": "date"
         },
         {
           "alias": "",
@@ -1906,7 +1908,6 @@
         {
           "expr": "sum(node_meta) by (node_id, node_name, instance)",
           "format": "table",
-          "instant": true,
           "intervalFactor": 2,
           "refId": "A",
           "step": 2
@@ -1946,8 +1947,17 @@
         "sort": 0,
         "tagValuesQuery": "label_values({node_id=\"$tag\"},node_name)",
         "tags": [
-          "ofdocker",
-          "ofmon"
+          "haystack-mongo-3",
+          "needle-manager-1",
+          "needle-manager-3",
+          "haystack-mongo-2",
+          "needle-micro-5",
+          "ip-10-40-10-213",
+          "needle-micro-2",
+          "haystack-mysql-master",
+          "needle-manager-4",
+          "haystack-mongo-1",
+          "needle-micro-1"
         ],
         "tagsQuery": "label_values(node_meta, node_name)",
         "type": "query",
@@ -2060,5 +2070,5 @@
   "timezone": "",
   "title": "Docker Swarm Nodes",
   "uid": "BPlb-Sgik",
-  "version": 3
+  "version": 1
 }

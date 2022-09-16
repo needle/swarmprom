@@ -9,3 +9,8 @@ receivers:
             #username: <user>#
             #channel: <channel>#
             #api_url: <url>#
+    - name: 'pagerDuty'
+      pagerduty_configs:
+        - service_key: ae53adc855854c089e127abf5cf35178
+      slack_configs:
+        - channel: '#ops'

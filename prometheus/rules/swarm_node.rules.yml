@@ -13,8 +13,8 @@ groups:
       summary: CPU alert for Swarm node '{{ $labels.node_name }}'
   - alert: node_memory_usage
     expr: sum(((node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes)
-      * ON(instance) GROUP_LEFT(node_name) node_meta * 100) BY (node_name) > 80
-    for: 1m
+      * ON(instance) GROUP_LEFT(node_name) node_meta * 100) BY (node_name) > 93
+    for: 5m
     labels:
       severity: warning
     annotations:
