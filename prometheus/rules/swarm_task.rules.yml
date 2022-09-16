@@ -22,21 +22,18 @@ groups:
         $value}}.'
       summary: Memory alert for Swarm task '{{ $labels.container_label_com_docker_swarm_task_name
         }}' on '{{ $labels.container_label_com_docker_swarm_node_id }}'
-
   - alert: container_not_in_running_state
     expr: sum(container_tasks_state{state!="running"}) by (container_label_com_docker_stack_namespace) > 0
     for: 3m
     annotations:
       description: "Container not in running state in stack '{{ $labels.container_label_com_docker_swarm_task_name }}' on '{{ $labels.instance }}'"
       summary: "Container not in running state in stack '{{ $labels.container_label_com_docker_swarm_task_name }}' on '{{ $labels.instance }}'"
-
   - alert: container_missing_in_haystack_mongo
     expr: count(container_last_seen{container_label_com_docker_stack_namespace="haystack-mongo"}) < 3
     for: 5m
     annotations:
       description: "There are less than three container in the Haystack-mongo stack"
       summary: "A container is missing in Haystack-mongo stack"
-
   - alert: container_missing_in_mysql
     expr: count(container_last_seen{container_label_com_docker_stack_namespace="mysql"}) < 2
     for: 5m
@@ -44,16 +41,9 @@ groups:
       description: "There are less than three container in the mysql stack"
       summary: "A container is missing in mysql stack"
 
-  - alert:
-    expr:
-    for:
-    annotations:
-      description: ''
-      summary:
-
-  - alert:
-    expr:
-    for:
-    annotations:
-      description: ''
-      summary:
+#  - alert:
+#    expr:
+#    for:
+#    annotations:
+#      description: ''
+#      summary:
