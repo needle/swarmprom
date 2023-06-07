@@ -58,7 +58,7 @@ services:
           memory: 64M
 
   grafana:
-    image: needleops/grafana:dc42b5
+    image: needleops/grafana:test-amd64
     networks:
       - net
     environment:
