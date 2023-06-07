@@ -1,16 +1,14 @@
 route:
-    receiver: 'slack'
+  receiver: 'slack'
 
 receivers:
-    - name: 'slack'
-      slack_configs:
-          - send_resolved: true
-            text: "{{ .CommonAnnotations.description }}"
-            #username: <user>#
-            #channel: <channel>#
-            #api_url: <url>#
-    - name: 'pagerDuty'
-      pagerduty_configs:
-        - service_key: ae53adc855854c089e127abf5cf35178
-      slack_configs:
-        - channel: '#ops'
+  #    - name: 'slack'
+  #      slack_configs:
+  #          - send_resolved: true
+  #            text: "{{ .CommonAnnotations.description }}"
+  #            username: alertmanager
+  #            channel: <channel>#
+  #            api_url: <url>#
+  - name: 'slack'
+    webhook_configs:
+      - url: 'https://www.zenduty.com/api/integration/prometheus/1a026124-c8b8-4361-ae73-2c0acf7fd18c/'

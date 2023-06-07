@@ -15,9 +15,9 @@ configs:
     file: ./caddy/Caddyfile
   dockerd_config:
     file: ./dockerd-exporter/Caddyfile
-  node_rules:
+  node_rulesv4:
     file: ./prometheus/rules/swarm_node.rules.yml
-  task_rules:
+  task_rulesv4:
     file: ./prometheus/rules/swarm_task.rules.yml
 
 services:
@@ -87,7 +87,7 @@ services:
           memory: 64M
 
   alertmanager:
-    image: stefanprodan/swarmprom-alertmanager:v0.14.0
+    image: needleops/alertmanager:zenduty-test1
     networks:
       - net
     environment:
@@ -157,9 +157,9 @@ services:
     volumes:
       - prometheus:/prometheus
     configs:
-      - source: node_rules
+      - source: node_rulesv4
         target: /etc/prometheus/swarm_node.rules.yml
-      - source: task_rules
+      - source: task_rulesv4
         target: /etc/prometheus/swarm_task.rules.yml
     deploy:
       mode: replicated

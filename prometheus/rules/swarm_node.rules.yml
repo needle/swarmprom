@@ -3,8 +3,8 @@ groups:
   rules:
   - alert: node_cpu_usage
     expr: 100 - (avg(irate(node_cpu_seconds_total{mode="idle"}[1m]) * ON(instance) GROUP_LEFT(node_name)
-      node_meta * 100) BY (node_name)) > 50
-    for: 1m
+      node_meta * 100) BY (node_name)) > 75
+    for: 5m
     labels:
       severity: warning
     annotations:
@@ -25,7 +25,7 @@ groups:
     expr: ((node_filesystem_size_bytes{mountpoint="/rootfs"} - node_filesystem_free_bytes{mountpoint="/rootfs"})
       * 100 / node_filesystem_size_bytes{mountpoint="/rootfs"}) * ON(instance) GROUP_LEFT(node_name)
       node_meta > 85
-    for: 1m
+    for: 5m
     labels:
       severity: warning
     annotations:
@@ -41,4 +41,12 @@ groups:
     annotations:
       description: Swarm node {{ $labels.node_name }} disk is going to fill up in
         6h.
-      summary: Disk fill alert for Swarm node '{{ $labels.node_name }}'
+      summary: Disk fill alert for Swarm node '{{ $labels.node_name }}
+  - alert: one_or_more_nodes_missing_from_cluster
+    expr: sum(node_uname_info) < 11
+    for: 10m
+    labels:
+      severity: critical
+    annotations:
+      description: One or more nodes are missing from the swarm
+      summary: One or more nodes are missing from the swarm
