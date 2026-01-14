@@ -3,7 +3,11 @@ version: "3.3"
 networks:
   net:
     driver: overlay
+    external: true
     attachable: true
+  needle-db:
+    driver: overlay
+    external: true
 
 volumes:
     prometheus: {}
@@ -11,37 +15,17 @@ volumes:
     alertmanager: {}
 
 configs:
-  caddy_config:
-    file: ./caddy/Caddyfile
-  dockerd_config:
-    file: ./dockerd-exporter/Caddyfile
   node_rulesv4:
     file: ./prometheus/rules/swarm_node.rules.yml
   task_rulesv4:
     file: ./prometheus/rules/swarm_task.rules.yml
 
 services:
-  dockerd-exporter:
-    image: stefanprodan/caddy
-    networks:
-      - net
-    environment:
-      - DOCKER_GWBRIDGE_IP=172.18.0.1
-    configs:
-      - source: dockerd_config
-        target: /etc/caddy/Caddyfile
-    deploy:
-      mode: global
-      resources:
-        limits:
-          memory: 128M
-        reservations:
-          memory: 64M
-
   cadvisor:
-    image: google/cadvisor
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
     networks:
       - net
+      - needle-db
     command: -logtostderr -docker_only
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -58,20 +42,14 @@ services:
           memory: 64M
 
   grafana:
-    image: needleops/grafana:test-amd64
+    image: needleops/grafana:11.4.0
     networks:
       - net
+      - needle-db
     environment:
       - GF_SECURITY_ADMIN_USER=${ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
-      #- GF_SERVER_ROOT_URL=${GF_SERVER_ROOT_URL:-localhost}
-      #- GF_SMTP_ENABLED=${GF_SMTP_ENABLED:-false}
-      #- GF_SMTP_FROM_ADDRESS=${GF_SMTP_FROM_ADDRESS:-grafana@test.com}
-      #- GF_SMTP_FROM_NAME=${GF_SMTP_FROM_NAME:-Grafana}
-      #- GF_SMTP_HOST=${GF_SMTP_HOST:-smtp:25}
-      #- GF_SMTP_USER=${GF_SMTP_USER}
-      #- GF_SMTP_PASSWORD=${GF_SMTP_PASSWORD}
     volumes:
       - grafana:/var/lib/grafana
     deploy:
@@ -87,16 +65,14 @@ services:
           memory: 64M
 
   alertmanager:
-    image: needleops/alertmanager:zenduty-test1
+    image: needleops/alertmanager:0.27.0
     networks:
       - net
+      - needle-db
     environment:
       - SLACK_URL=${SLACK_URL:-https://hooks.slack.com/services/TOKEN}
       - SLACK_CHANNEL=${SLACK_CHANNEL:-general}
       - SLACK_USER=${SLACK_USER:-alertmanager}
-    command:
-      - '--config.file=/etc/alertmanager/alertmanager.yml'
-      - '--storage.path=/alertmanager'
     volumes:
       - alertmanager:/alertmanager
     deploy:
@@ -111,20 +87,22 @@ services:
         reservations:
           memory: 64M
 
-  unsee:
-    image: cloudflare/unsee:v0.8.0
+  karma:
+    image: ghcr.io/prymitive/karma:v0.120
     networks:
       - net
+      - needle-db
     environment:
-      - "ALERTMANAGER_URIS=default:http://alertmanager:9093"
+      - "ALERTMANAGER_URI=http://alertmanager:9093"
     deploy:
       mode: replicated
       replicas: 1
 
   node-exporter:
-    image: stefanprodan/swarmprom-node-exporter:v0.16.0
+    image: needleops/node-exporter:1.8.2
     networks:
       - net
+      - needle-db
     environment:
       - NODE_ID={{.Node.ID}}
     volumes:
@@ -136,7 +114,7 @@ services:
       - '--path.sysfs=/host/sys'
       - '--path.procfs=/host/proc'
       - '--collector.textfile.directory=/etc/node-exporter/'
-      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
       - '--no-collector.ipvs'
     deploy:
       mode: global
@@ -146,14 +124,32 @@ services:
         reservations:
           memory: 64M
 
-  prometheus:
-    image: stefanprodan/swarmprom-prometheus:v2.5.0
+  dockerd-exporter:
+    image: needleops/dockerd-exporter:2.8.4
     networks:
       - net
+      - needle-db
+    environment:
+      - DOCKER_GWBRIDGE_IP=172.18.0.1
+    deploy:
+      mode: global
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+
+  prometheus:
+    image: needleops/prometheus:2.54.1
+    networks:
+      - net
+      - needle-db
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention=${PROMETHEUS_RETENTION:-24h}'
+      - '--storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-24h}'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
     volumes:
       - prometheus:/prometheus
     configs:
@@ -174,7 +170,7 @@ services:
           memory: 128M
 
   caddy:
-    image: stefanprodan/caddy
+    image: needleops/caddy:2.8.4
     ports:
       - "3000:3000"
       - "9090:9090"
@@ -182,12 +178,10 @@ services:
       - "9094:9094"
     networks:
       - net
+      - needle-db
     environment:
       - ADMIN_USER=${ADMIN_USER:-admin}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
-    configs:
-      - source: caddy_config
-        target: /etc/caddy/Caddyfile
     deploy:
       mode: replicated
       replicas: 1
@@ -200,7 +194,7 @@ services:
         reservations:
           memory: 64M
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
       interval: 5s
       timeout: 1s
       retries: 5

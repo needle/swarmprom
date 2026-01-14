@@ -1,4 +1,6 @@
-FROM prom/node-exporter:v0.16.0
+# Node Exporter with custom entrypoint for Docker Swarm node metadata
+# Update this version periodically for security patches
+FROM prom/node-exporter:v1.8.2
 
 ENV NODE_ID=none
 

@@ -1,5 +1,7 @@
-FROM prom/prometheus:v2.5.0
+# Prometheus with custom entrypoint for dynamic job configuration
+# Update this version periodically for security patches
 # https://hub.docker.com/r/prom/prometheus/tags/
+FROM prom/prometheus:v2.54.1
 
 ENV WEAVE_TOKEN=none
 

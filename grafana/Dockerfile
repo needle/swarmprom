@@ -1,5 +1,7 @@
-FROM grafana/grafana:latest
+# Grafana with pre-provisioned dashboards for Docker Swarm monitoring
+# Update this version periodically for security patches
 # https://hub.docker.com/r/grafana/grafana/tags/
+FROM grafana/grafana:11.4.0
 
 COPY datasources /etc/grafana/provisioning/datasources/
 COPY swarmprom_dashboards.yml /etc/grafana/provisioning/dashboards/
