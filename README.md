@@ -23,6 +23,32 @@ SLACK_USER=alertmanager \
 docker stack deploy -c docker-compose.yml mon
 ```
 
+## Quick Deploy with swarmprom.sh
+
+For simplified deployment, create a `swarmprom.sh` script (not tracked in git to protect credentials):
+
+```bash
+#!/bin/bash
+ADMIN_USER=admin \
+ADMIN_PASSWORD=changeme \
+docker stack deploy -c docker-compose.yml metrics --with-registry-auth
+```
+
+Then deploy:
+
+```bash
+chmod +x swarmprom.sh
+./swarmprom.sh
+```
+
+The script sets the admin credentials used for:
+- **Grafana** login (port 3000)
+- **Prometheus** basic auth (port 9090)
+- **Alertmanager** basic auth (port 9093)
+- **Karma** basic auth (port 9094)
+
+**Note:** The admin password is automatically synced to Grafana on each deployment, so changing the password in the script and redeploying will update Grafana's admin password.
+
 Prerequisites:
 
 * Docker CE 17.09.0-ce or Docker EE 17.06.2-ee-3
