@@ -225,7 +225,7 @@
         "barWidth": 0.9,
         "groupWidth": 0.7,
         "legend": { "calcs": [], "displayMode": "list", "placement": "right", "showLegend": true },
-        "orientation": "horizontal",
+        "orientation": "auto",
         "showValue": "auto",
         "stacking": "none",
         "tooltip": { "mode": "single", "sort": "none" },

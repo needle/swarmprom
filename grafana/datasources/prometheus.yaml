@@ -9,6 +9,7 @@ datasources:
   type: prometheus
   access: proxy
   url: http://prometheus:9090
+  uid: prometheus
   isDefault: true
   version: 1
   editable: true
@@ -16,5 +17,6 @@ datasources:
   type: graphite
   access: proxy
   url: http://graphite:80
+  uid: jp7T-f2Ik
   jsonData:
     graphiteVersion: "1.1"

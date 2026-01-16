@@ -15,14 +15,44 @@ volumes:
     alertmanager: {}
 
 configs:
-  node_rulesv4:
+  node_rules:
     file: ./prometheus/rules/swarm_node.rules.yml
-  task_rulesv4:
+  task_rules:
     file: ./prometheus/rules/swarm_task.rules.yml
+  prometheus_config:
+    file: ./prometheus/conf/prometheus.yml
+  alertmanager_config:
+    file: ./alertmanager/conf/alertmanager.yml
+  grafana_datasources:
+    file: ./grafana/datasources/prometheus.yaml
+  grafana_dashboards_provisioning:
+    file: ./grafana/swarmprom_dashboards.yml
+  grafana_dash_nodes:
+    file: ./grafana/dashboards/swarmprom-nodes-dash.json
+  grafana_dash_services:
+    file: ./grafana/dashboards/swarmprom-services-dash.json
+  grafana_dash_prometheus:
+    file: ./grafana/dashboards/swarmprom-prometheus-dash.json
+  grafana_dash_node_exporter:
+    file: ./grafana/dashboards/node-exporter-full_rev1.json
+  grafana_dash_container_resources:
+    file: ./grafana/dashboards/container-resources.json
+  grafana_dash_service_health:
+    file: ./grafana/dashboards/service-health.json
+  grafana_dash_cluster_capacity:
+    file: ./grafana/dashboards/cluster-capacity.json
+  grafana_dash_partner_visits:
+    file: ./grafana/dashboards/partner-visits.json
+  grafana_dash_partner_purchases:
+    file: ./grafana/dashboards/partner-purchases.json
+  grafana_start_script:
+    file: ./grafana/start.sh
+  caddy_start_script:
+    file: ./caddy/start.sh
 
 services:
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    image: gcr.io/cadvisor/cadvisor:latest
     networks:
       - net
       - needle-db
@@ -42,7 +72,8 @@ services:
           memory: 64M
 
   grafana:
-    image: needleops/grafana:11.4.0
+    image: grafana/grafana:11.4.0
+    user: "0"
     networks:
       - net
       - needle-db
@@ -52,6 +83,33 @@ services:
       - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - grafana:/var/lib/grafana
+    configs:
+      - source: grafana_datasources
+        target: /etc/grafana/provisioning/datasources/datasources.yaml
+      - source: grafana_dashboards_provisioning
+        target: /etc/grafana/provisioning/dashboards/dashboards.yaml
+      - source: grafana_dash_nodes
+        target: /etc/grafana/dashboards/swarmprom-nodes-dash.json
+      - source: grafana_dash_services
+        target: /etc/grafana/dashboards/swarmprom-services-dash.json
+      - source: grafana_dash_prometheus
+        target: /etc/grafana/dashboards/swarmprom-prometheus-dash.json
+      - source: grafana_dash_node_exporter
+        target: /etc/grafana/dashboards/node-exporter-full_rev1.json
+      - source: grafana_dash_container_resources
+        target: /etc/grafana/dashboards/container-resources.json
+      - source: grafana_dash_service_health
+        target: /etc/grafana/dashboards/service-health.json
+      - source: grafana_dash_cluster_capacity
+        target: /etc/grafana/dashboards/cluster-capacity.json
+      - source: grafana_dash_partner_visits
+        target: /etc/grafana/dashboards/partner-visits.json
+      - source: grafana_dash_partner_purchases
+        target: /etc/grafana/dashboards/partner-purchases.json
+      - source: grafana_start_script
+        target: /start.sh
+        mode: 0755
+    entrypoint: ["/bin/sh", "/start.sh"]
     deploy:
       mode: replicated
       replicas: 1
@@ -65,16 +123,18 @@ services:
           memory: 64M
 
   alertmanager:
-    image: needleops/alertmanager:0.27.0
+    image: prom/alertmanager:v0.27.0
     networks:
       - net
       - needle-db
-    environment:
-      - SLACK_URL=${SLACK_URL:-https://hooks.slack.com/services/TOKEN}
-      - SLACK_CHANNEL=${SLACK_CHANNEL:-general}
-      - SLACK_USER=${SLACK_USER:-alertmanager}
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
     volumes:
       - alertmanager:/alertmanager
+    configs:
+      - source: alertmanager_config
+        target: /etc/alertmanager/alertmanager.yml
     deploy:
       mode: replicated
       replicas: 1
@@ -99,7 +159,7 @@ services:
       replicas: 1
 
   node-exporter:
-    image: needleops/node-exporter:1.8.2
+    image: prom/node-exporter:v1.8.2
     networks:
       - net
       - needle-db
@@ -125,12 +185,13 @@ services:
           memory: 64M
 
   dockerd-exporter:
-    image: needleops/dockerd-exporter:2.8.4
+    image: caddy:2.8.4-alpine
     networks:
       - net
       - needle-db
     environment:
       - DOCKER_GWBRIDGE_IP=172.18.0.1
+    entrypoint: ["/bin/sh", "-c", "printf ':9323 {\n    reverse_proxy %s:9323\n}\n' \"$DOCKER_GWBRIDGE_IP\" > /etc/caddy/Caddyfile && caddy run --config /etc/caddy/Caddyfile --adapter caddyfile"]
     deploy:
       mode: global
       resources:
@@ -140,7 +201,7 @@ services:
           memory: 64M
 
   prometheus:
-    image: needleops/prometheus:2.54.1
+    image: prom/prometheus:v2.54.1
     networks:
       - net
       - needle-db
@@ -153,9 +214,11 @@ services:
     volumes:
       - prometheus:/prometheus
     configs:
-      - source: node_rulesv4
+      - source: prometheus_config
+        target: /etc/prometheus/prometheus.yml
+      - source: node_rules
         target: /etc/prometheus/swarm_node.rules.yml
-      - source: task_rulesv4
+      - source: task_rules
         target: /etc/prometheus/swarm_task.rules.yml
     deploy:
       mode: replicated
@@ -170,7 +233,7 @@ services:
           memory: 128M
 
   caddy:
-    image: needleops/caddy:2.8.4
+    image: caddy:2.8.4-alpine
     ports:
       - "3000:3000"
       - "9090:9090"
@@ -182,6 +245,11 @@ services:
     environment:
       - ADMIN_USER=${ADMIN_USER:-admin}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+    configs:
+      - source: caddy_start_script
+        target: /start.sh
+        mode: 0755
+    command: ["/bin/sh", "/start.sh"]
     deploy:
       mode: replicated
       replicas: 1
