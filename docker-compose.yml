@@ -47,6 +47,8 @@ configs:
     file: ./grafana/dashboards/partner-purchases.json
   grafana_start_script:
     file: ./grafana/start.sh
+  node_exporter_start_script:
+    file: ./node-exporter/start.sh
   caddy_start_script:
     file: ./caddy/start.sh
 
@@ -170,10 +172,15 @@ services:
       - /sys:/host/sys:ro
       - /:/rootfs:ro
       - /etc/hostname:/etc/nodename
+    configs:
+      - source: node_exporter_start_script
+        target: /start.sh
+        mode: 0755
+    entrypoint: ["/bin/sh", "/start.sh"]
     command:
       - '--path.sysfs=/host/sys'
       - '--path.procfs=/host/proc'
-      - '--collector.textfile.directory=/etc/node-exporter/'
+      - '--collector.textfile.directory=/tmp/node-exporter/'
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
       - '--no-collector.ipvs'
     deploy:
@@ -261,8 +268,3 @@ services:
           memory: 128M
         reservations:
           memory: 64M
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
-      interval: 5s
-      timeout: 1s
-      retries: 5
