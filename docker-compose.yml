@@ -74,7 +74,7 @@ services:
           memory: 64M
 
   grafana:
-    image: grafana/grafana:11.4.0
+    image: grafana/grafana:11.6.2-security-01
     user: "0"
     networks:
       - net
