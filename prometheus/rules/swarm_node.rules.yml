@@ -41,7 +41,7 @@ groups:
 
   # Disk Alerts
   - alert: NodeHighDiskUsage
-    expr: ((node_filesystem_size_bytes{mountpoint="/rootfs"} - node_filesystem_free_bytes{mountpoint="/rootfs"}) * 100 / node_filesystem_size_bytes{mountpoint="/rootfs"}) * ON(instance) GROUP_LEFT(node_name) node_meta > 85
+    expr: ((node_filesystem_size_bytes{mountpoint="/"} - node_filesystem_free_bytes{mountpoint="/"}) * 100 / node_filesystem_size_bytes{mountpoint="/"}) * ON(instance) GROUP_LEFT(node_name) node_meta > 85
     for: 5m
     labels:
       severity: warning
@@ -50,7 +50,7 @@ groups:
       summary: High disk usage on node '{{ $labels.node_name }}'
 
   - alert: NodeCriticalDiskUsage
-    expr: ((node_filesystem_size_bytes{mountpoint="/rootfs"} - node_filesystem_free_bytes{mountpoint="/rootfs"}) * 100 / node_filesystem_size_bytes{mountpoint="/rootfs"}) * ON(instance) GROUP_LEFT(node_name) node_meta > 95
+    expr: ((node_filesystem_size_bytes{mountpoint="/"} - node_filesystem_free_bytes{mountpoint="/"}) * 100 / node_filesystem_size_bytes{mountpoint="/"}) * ON(instance) GROUP_LEFT(node_name) node_meta > 95
     for: 2m
     labels:
       severity: critical
@@ -59,7 +59,7 @@ groups:
       summary: Critical disk usage on node '{{ $labels.node_name }}'
 
   - alert: NodeDiskFillRate6h
-    expr: predict_linear(node_filesystem_free_bytes{mountpoint="/rootfs"}[1h], 6 * 3600) * ON(instance) GROUP_LEFT(node_name) node_meta < 0
+    expr: predict_linear(node_filesystem_free_bytes{mountpoint="/"}[1h], 6 * 3600) * ON(instance) GROUP_LEFT(node_name) node_meta < 0
     for: 1h
     labels:
       severity: critical

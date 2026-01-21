@@ -126,6 +126,7 @@ services:
 
   alertmanager:
     image: prom/alertmanager:v0.27.0
+    user: "0"
     networks:
       - net
       - needle-db
@@ -196,9 +197,9 @@ services:
     networks:
       - net
       - needle-db
-    environment:
-      - DOCKER_GWBRIDGE_IP=172.18.0.1
-    entrypoint: ["/bin/sh", "-c", "printf ':9323 {\n    reverse_proxy %s:9323\n}\n' \"$DOCKER_GWBRIDGE_IP\" > /etc/caddy/Caddyfile && caddy run --config /etc/caddy/Caddyfile --adapter caddyfile"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    entrypoint: ["/bin/sh", "-c", "printf ':9323 {\n    reverse_proxy host.docker.internal:9323\n}\n' > /etc/caddy/Caddyfile && caddy run --config /etc/caddy/Caddyfile --adapter caddyfile"]
     deploy:
       mode: global
       resources:
